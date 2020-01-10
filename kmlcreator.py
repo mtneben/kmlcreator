@@ -56,13 +56,10 @@ def import_csv_into_db():
     secpart5 = '</styleUrl><Polygon><extrude>1</extrude><tessellate>1</tessellate><outerBoundaryIs><LinearRing><coordinates>'
     secpart6 = '</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>'
     secpart7 = '</Folder>'
-    print(len(techs))
 
     for index, data2 in techs.iterrows():
         global listval
-        print(listval)
-        print(index)
-        if sg.OneLineProgressMeter('Progress...', listval, len(techs),'--progress__', bar_color=('blue', 'white'), orientation='h') is False:
+        if sg.OneLineProgressMeter('Progress...', listval, len(techs)-1,'--progress__', bar_color=('blue', 'white'), orientation='h') is False:
             break
         listval += 1
         global placemark_str
@@ -106,7 +103,7 @@ def import_csv_into_db():
         placemark_str = xml.dom.minidom.parseString(placemark_str).toprettyxml()
 
 menu_def = [['&File', ['E&xit']],
-            ['&Help', ['H&elp', '&About...']], ]
+            ['&Help', ['&About...']] ]
 
 sg.change_look_and_feel('SystemDefaultForReal')    # Add a touch of color
 # Window layout.
@@ -117,7 +114,7 @@ layout = [  [sg.Menu(menu_def, tearoff=False, pad=(200, 1))],
             [sg.Text('Import Location:',), sg.Text(justification='right', background_color= 'white', size=[30,1]), sg.FileBrowse(auto_size_button=False)],
             [sg.Checkbox('Create Sites (Only unique site IDs will be used)',key='__sites__')],
             [sg.Checkbox('Create Sectors (Grouped by technology)', key='__sectors__')],
-            [sg.Text('Export Location:',), sg.Text(justification='right', background_color= 'white', size=[30,1]), sg.FileSaveAs(key='export_location', button_text='Browse', file_types=(('Kml', '*.kml'),('All Files', '*.*')) , auto_size_button=False), sg.Ok(button_text='Export', auto_size_button=False), sg.Exit(auto_size_button=False)],
+            [sg.Text('Export Location:',), sg.Text(justification='right', background_color= 'white', size=[30,1]), sg.FileSaveAs(key='export_location', button_text='Browse', file_types=(('Kml', '*.kml'),('All Files', '*.*')) , auto_size_button=False), sg.Ok(button_text='Export', key='__export__' ,auto_size_button=False), sg.Exit(auto_size_button=False)],
         ]
 
 # Create the Window
@@ -126,16 +123,17 @@ window = sg.Window('KML Creator', layout, icon = 'tower.png')
 # Event Loop to process "events" and get the "values" of the inputs
 while True:                             # The Event Loop
     event, values = window.read()
-    # print(event, values)
     if event in (None, 'Exit'):
         break
-    if values['Browse'] != None:
+    elif event == 'About...':
+        sg.popup('KML Creator', 'Version 1.3',
+                'https://github.com/mtneben/kmlcreator',  grab_anywhere=True)
+    if values['Browse'] != None and values['export_location'] != None and event == '__export__':
         import_csv_into_db()
-    if values['export_location'] != None:
-        # sg.OneLineProgressMeter('Export Progress', 0, len(techs),)
         export_location = values['export_location']
         with open(export_location, 'w') as out:
             out.write(placemark_str)
+        sg.popup_auto_close('Export Successful. Program will close automatically', auto_close_duration=4)
         window.close()
 
 window.close()
